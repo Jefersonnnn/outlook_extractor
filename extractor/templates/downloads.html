@@ -1,62 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Downloads</title>
-    <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #0077be;
-    color: white;
-    font-family: "Open Sans", sans-serif;
-  }
-  th, td {
-    border: 1px solid white;
-    padding: 10px 20px;
-    text-align: left;
-  }
-  th {
-    background-color: #0077be;
-  }
-  tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  .header-cell {
-    font-size: 1.2em;
-    font-weight: bold;
-  }
-  .row-link {
-    color: white;
-    text-decoration: underline;
-  }
-</style>
-  </head>
-  <body>
+{% extends "base.html" %}
+
+{% block title %}Lista de Pastas/Emails{%endblock%}
+
+{% block content %}
+<div>
     <h1>Downloads</h1>
     <table>
-    <thead>
-      <tr>
-        <th>Id</th>
-        <th>Data</th>
-        <th>Emails Carregados</th>
-        <th>Status</th>
-        <th>Download</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for download in downloads %}
-      <tr>
-        <td>{{ download.id }}</td>
-        <td>{{ download.data }}</td>
-        <td>{{ download.qtd_emails }}</td>
-        <td>{{ download.status }}</td>
-        {% if download.status == 'Success' %}
-        <td><a href="/download_email/{{ download.id }}">Download</a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        <thead>
+        <tr>
+            <th>Data</th>
+            <th>Emails Carregados</th>
+            <th>Status</th>
+            <th style="width: 10%;">Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for download in downloads %}
+        <tr>
+            <td>{{ download.data }}</td>
+            {% if download.status == 'Success' or download.status == 'Pending' %}
+            <td>{{ download.qtd_emails }}</td>
+            {% else %}
+            <td>-1</td>
+            {% endif %}
 
-  </body>
-</html>
+            <td>{{ download.status }}</td>
+            <td>
+                {% if download.status == 'Success' %}
+                <a href="/download_emails/{{ download.uuid }}"><button class="download-btn" title="Download de todos os emails carregados"><i class="fa fa-download"></i></button></a>
+                <button class="delete-btn" title="Excluir todos os emails carregados"><i class="fa fa-trash"></i></button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" crossorigin="anonymous" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <title>{% block title %}{% endblock %}</title>
 </head>
@@ -18,6 +19,7 @@
             <li><a href="{{ url_for('index') }}">Home</a></li>
             {% if user %}
             <li><a href="{{ url_for('get_folders') }}">Listar Pastas do E-mail</a></li>
+            <li><a href="{{ url_for('downloads') }}">Listar Downloads</a></li>
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
             {% endif %}
         </ul>

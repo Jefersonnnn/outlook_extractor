@@ -54,3 +54,33 @@ tr:hover {
     color: #0b3d91;
     transition: all 0.2s ease;
 }
+
+button i {
+    margin-right: 10px;
+}
+
+.download-btn, .delete-btn {
+    border: none;
+    background-color: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.download-btn {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.download-btn:hover, .delete-btn:hover {
+    opacity: 0.7;
+}
+
+.download-btn i, .open-btn i, .delete-btn i {
+    font-size: 20px;
+}

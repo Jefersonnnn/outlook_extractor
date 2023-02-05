@@ -1,9 +1,12 @@
+import csv
+import io
 import json
 import threading
 import uuid
 from datetime import datetime
 
-from flask import Flask, render_template, session, request, redirect, url_for, jsonify
+from flask import Flask, render_template, session, request, redirect, url_for, jsonify, make_response, send_file, \
+    Response
 from flask_sqlalchemy import SQLAlchemy
 
 from extractor.utils import html_to_text
@@ -36,6 +39,7 @@ class Email(db.Model):
     raw_body = db.Column(db.Text, nullable=False)
     body = db.Column(db.Text)
     categories = db.Column(db.String(255), nullable=True)
+    download_history_uuid = db.Column(db.String(255), db.ForeignKey('download_history.uuid'))
 
     # folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
 
@@ -46,7 +50,7 @@ class Email(db.Model):
 class DownloadHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     uuid = db.Column(db.String(255), default=str(uuid.uuid4()), unique=True, nullable=False)
-    # folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
     parentFolderId = db.Column(db.String(255), nullable=False)
     qtd_emails = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20))
@@ -87,7 +91,8 @@ def authorized():
             return render_template("auth_error.html", result=result)
         session["user"] = result.get("id_token_claims")
         _save_cache(cache)
-    except ValueError:  # Usually caused by CSRF
+    except ValueError as e:  # Usually caused by CSRF
+        print(e)
         pass  # Simply ignore them
     return redirect(url_for("index"))
 
@@ -100,43 +105,32 @@ def logout():
         "?post_logout_redirect_uri=" + url_for("index", _external=True))
 
 
-@app.route("/folders", defaults={'folder_id': None, 'message_id': None})
-@app.route("/folders/<folder_id>/messages/<message_id>", defaults={'message_id': None})
-@app.route('/folders/<folder_id>', defaults={'message_id': None})
-def get_folders(folder_id, message_id):
+@app.route("/folders", defaults={'folder_id': None})
+@app.route('/folders/<folder_id>')
+def get_folders(folder_id):
     token = _get_token_from_cache(app_config.SCOPE)
     if not token:
         return redirect(url_for("login"))
 
-    if message_id:
-        token = _get_token_from_cache(app_config.SCOPE)
-        if not token:
-            return redirect(url_for("login"))
-
-        email_folders = EmailFolders(token)
-        message = email_folders.get_message_by_id(folder_id, message_id)
-
-        return message if message else []
-
     email_folders = EmailFolders(token)
     folders = email_folders.get_folders(folder_id)
-    return render_template('email_folders.html', listFolders=folders, user=session["user"], version=msal.__version__)
+    return render_template('email_folders.html', listFolders=folders, user=session["user"])
 
 
 @app.route("/extract_emails/<folder_id>")
-def download_emails(folder_id):
+def extract_emails(folder_id):
     token = _get_token_from_cache(app_config.SCOPE)
     if not token:
         return redirect(url_for("login"))
 
     # Create a separete thread to fetch emails
-    thread = threading.Thread(target=_get_emails_worker, args=(folder_id, token,))
+    thread = threading.Thread(target=_get_emails_worker, args=(folder_id, token, session['user']['preferred_username']))
     thread.start()
 
     return redirect(url_for("downloads"))
 
 
-@app.route("/downloads")
+@app.route("/list_downloads")
 def downloads():
     db.create_all()
     download_history = db.session.query(DownloadHistory).all()
@@ -148,44 +142,37 @@ def downloads():
         _qtd = dh.qtd_emails
         _parent_id = dh.parentFolderId
         file_emails.append(
-            {'id': _id,
+            {'uuid': _id,
              'parent_id': _parent_id,
              'qtd_emails': _qtd,
              'status': _status,
              'data': _data})
 
-    # folder_path = os.path.join("./download_emails")
-    # file_emails = []
-    # for filename in os.listdir(folder_path):
-    #     if filename.endswith('.csv'):
-    #         file_path = os.path.join(folder_path, filename)
-    #         file_size = os.path.getsize(file_path)
-    #         file_modified_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-    #         file_emails.append(
-    #             {'file_name': filename, 'file_size': file_size, 'file_modiefied_time': file_modified_time})
-
-    return render_template("downloads.html", downloads=file_emails)
+    return render_template("downloads.html", downloads=file_emails, user=session["user"])
 
 
-def _get_emails_worker(folder_id: str, token: str):
+def _get_emails_worker(folder_id: str, token: str, user_email: str):
     email_folders = EmailFolders(token)
     emails = email_folders.get_messages(folder_id)
 
-    # id_f = None
-    # with app.app_context():
-    #
-    #
-    #     id_f = db.session.add(Folder(nome="Teste", data_criacao=datetime.utcnow(), id_folder=folder_id))
-    #
-    #     db.session.commit()
     try:
+        uuid_history = None
         with app.app_context():
             db.create_all()
+            # Salvar historico
+            download_history = DownloadHistory(status='Pending',
+                                               email=user_email,
+                                               data=datetime.utcnow(),
+                                               qtd_emails=len(emails),
+                                               parentFolderId=emails[0]['parentFolderId'])
+            db.session.add(download_history)
+            db.session.commit()
+            uuid_history = download_history.uuid
+
+        with app.app_context():
             for email in emails:
-                subject = None
-                raw_body = None
-                body = None
-                categorias = None
+                subject, raw_body, body, categorias = None, None, None, None
+
                 print("=========--------=========---------========")
                 print("email_id: ", email["id"])
                 print("parent_folder_id: ", email["parentFolderId"])
@@ -200,45 +187,57 @@ def _get_emails_worker(folder_id: str, token: str):
                                                                                               :65000]
                 db.session.add(Email(
                     ol_email_id=email["id"],
+                    download_history_uuid=download_history.uuid,
                     subject=subject,
                     receveid_date=datetime.strptime(email["receivedDateTime"], '%Y-%m-%dT%H:%M:%SZ'),
                     raw_body=raw_body,
                     body=body,
                     categories=categorias))
-                db.session.commit()
 
-        with app.app_context():
-            # Salvar historico
-            db.session.add(DownloadHistory(status='Success', data=datetime.utcnow(), qtd_emails=len(emails),
-                                           parentFolderId=emails[0]['parentFolderId']))
+            download_history = db.session.query(DownloadHistory).filter_by(uuid=uuid_history).first()
+            download_history.status = "Success"
             db.session.commit()
-
         print("Download finalizado")
-
     except Exception as e:
         print(e)
         with app.app_context():
             # Salvar historico
-            db.session.add(DownloadHistory(status='Error', data=datetime.utcnow(), qtd_emails=-1,
-                                           parentFolderId=emails[0]['parentFolderId']))
+            download_history = db.session.query(DownloadHistory).filter_by(uuid=uuid_history).first()
+            if not download_history:
+                raise Exception
+            download_history.status = "Error"
             db.session.commit()
 
-    # _path_folder = os.path.join("./download_emails")
-    #
-    # if not os.path.exists(_path_folder):
-    #     os.mkdir(_path_folder)
-    #
-    # name_file = folder_id + ".csv"
-    # with open(os.path.join(_path_folder, name_file), "w", encoding="utf-8") as file:
-    #     writer = csv.writer(file, delimiter=';')
-    #     writer.writerow(["Subject", "Received Date", "Body", "Categories"])
-    #     for email in emails:
-    #         writer.writerow([email["subject"], email["receivedDateTime"], html_to_text(email['body']['content']), email["categories"]])
+
+@app.route("/download_emails/<string:download_history_uuid>", methods=["GET"])
+def download_emails(download_history_uuid):
+    emails = Email.query.filter_by(download_history_uuid=download_history_uuid).all()
+
+    csv_file = _save_to_csv(emails)
+
+    return send_file(
+        io.BytesIO(csv_file.read().encode()),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="emails.csv"
+    )
 
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return redirect(url_for("index"))
+def _save_to_csv(data):
+    csv_file = io.StringIO()
+    writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+    writer.writerow(["Subject", "receveid_date", "raw_body", "categories"])
+    for email in data:
+        receveid_date = email.receveid_date.strftime("%Y-%m-%d %H:%M:%S") if isinstance(email.receveid_date, datetime) else email.receveid_date
+        writer.writerow([email.subject, receveid_date, email.raw_body, email.categories])
+
+    csv_file.seek(0)
+    return csv_file
+
+
+# @app.errorhandler(404)
+# def page_not_found(e):
+#     return redirect(url_for("index"))
 
 
 def _load_cache():
