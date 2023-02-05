@@ -1,6 +1,5 @@
-import csv
-import os
 import threading
+import uuid
 from datetime import datetime
 
 from flask import Flask, render_template, session, request, redirect, url_for
@@ -44,7 +43,8 @@ class Email(db.Model):
 
 
 class DownloadHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    uuid = db.Column(db.String(255), default=str(uuid.uuid4()), unique=True, nullable=False)
     # folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
     parentFolderId = db.Column(db.String(255), nullable=False)
     qtd_emails = db.Column(db.Integer, nullable=False)
@@ -122,7 +122,7 @@ def get_folders(folder_id, message_id):
     return render_template('email_folders.html', listFolders=folders, user=session["user"], version=msal.__version__)
 
 
-@app.route("/download_emails/<folder_id>")
+@app.route("/extract_emails/<folder_id>")
 def download_emails(folder_id):
     token = _get_token_from_cache(app_config.SCOPE)
     if not token:
@@ -141,7 +141,7 @@ def downloads():
     download_history = db.session.query(DownloadHistory).all()
     file_emails = []
     for dh in download_history:
-        _id = dh.id
+        _id = dh.uuid
         _status = dh.status
         _data = dh.data
         _qtd = dh.qtd_emails
@@ -181,6 +181,10 @@ def _get_emails_worker(folder_id: str, token: str):
         with app.app_context():
             db.create_all()
             for email in emails:
+                subject = None
+                raw_body = None
+                body = None
+                categorias = None
                 print("=========--------=========---------========")
                 print("email_id: ", email["id"])
                 print("parent_folder_id: ", email["parentFolderId"])
@@ -201,10 +205,6 @@ def _get_emails_worker(folder_id: str, token: str):
                                      body=body,
                                      categories=categorias))
                 db.session.commit()
-                subject = None
-                raw_body = None
-                body = None
-                categorias = None
 
         with app.app_context():
             # Salvar historico
@@ -235,9 +235,9 @@ def _get_emails_worker(folder_id: str, token: str):
     #         writer.writerow([email["subject"], email["receivedDateTime"], html_to_text(email['body']['content']), email["categories"]])
 
 
-# @app.errorhandler(404)
-# def page_not_found(e):
-#     return redirect(url_for("index"))
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(url_for("index"))
 
 
 def _load_cache():

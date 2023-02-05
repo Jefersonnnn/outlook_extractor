@@ -40,6 +40,7 @@
         <th>Data</th>
         <th>Emails Carregados</th>
         <th>Status</th>
+        <th>Download</th>
       </tr>
     </thead>
     <tbody>
@@ -49,6 +50,9 @@
         <td>{{ download.data }}</td>
         <td>{{ download.qtd_emails }}</td>
         <td>{{ download.status }}</td>
+        {% if download.status == 'Success' %}
+        <td><a href="/download_email/{{ download.id }}">Download</a></td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

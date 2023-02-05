@@ -54,8 +54,7 @@
           <td>{{ folder.totalItemCount }}</td>
           <td>{{ folder.childFolderCount }}</td>
           <td><a href="/folders/{{ folder.id }}">Entrar</a></td>
-          <td><a href="/download_emails/{{ folder.id }}">Download</a></td>
-            {{if }}
+          <td><a href="/extract_emails/{{ folder.id }}">Download</a></td>
         </tr>
       {% endfor %}
     </table>
