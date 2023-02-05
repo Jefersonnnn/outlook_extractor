@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+<header>
+    <h1>Outlook Extractor - CAJ</h1>
+    {% if user %}
+    <h2>Bem vindo {{ user.get("name") }}! ( {{ user.get("preferred_username") }})</h2>
+    {% endif %}
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            {% if user %}
+            <li><a href="{{ url_for('get_folders') }}">Listar Pastas do E-mail</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<footer>
+    <p>Copyright © 2023</p>
+</footer>
+</body>
+</html>

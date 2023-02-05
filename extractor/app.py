@@ -1,8 +1,9 @@
+import json
 import threading
 import uuid
 from datetime import datetime
 
-from flask import Flask, render_template, session, request, redirect, url_for
+from flask import Flask, render_template, session, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 from extractor.utils import html_to_text
@@ -196,14 +197,14 @@ def _get_emails_worker(folder_id: str, token: str):
                 raw_body = html_to_text(email['body']['content']) if len(email['body']['content']) > 0 else email[
                     "subject"]
                 body = email['body']['content'] if len(email['body']['content']) < 65000 else email['body']['content'][
-                                                                                               :65000]
+                                                                                              :65000]
                 db.session.add(Email(
-                                    ol_email_id=email["id"],
-                                    subject=subject,
-                                     receveid_date=datetime.strptime(email["receivedDateTime"], '%Y-%m-%dT%H:%M:%SZ'),
-                                     raw_body=raw_body,
-                                     body=body,
-                                     categories=categorias))
+                    ol_email_id=email["id"],
+                    subject=subject,
+                    receveid_date=datetime.strptime(email["receivedDateTime"], '%Y-%m-%dT%H:%M:%SZ'),
+                    raw_body=raw_body,
+                    body=body,
+                    categories=categorias))
                 db.session.commit()
 
         with app.app_context():

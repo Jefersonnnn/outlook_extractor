@@ -1,68 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-<style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #0077be;
-    color: white;
-    font-family: "Open Sans", sans-serif;
-  }
-  th, td {
-    border: 1px solid white;
-    padding: 10px 20px;
-    text-align: left;
-  }
-  th {
-    background-color: #0077be;
-  }
-  tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  .header-cell {
-    font-size: 1.2em;
-    font-weight: bold;
-  }
-  .row-link {
-    color: white;
-    text-decoration: underline;
-  }
-</style>
+{% extends "base.html" %}
 
+{% block title %}Lista de Pastas/Emails{%endblock%}
 
-</head>
-<body>
+{% block content %}
+<div>
+    <h2>Pastas dos E-mails</h2>
     <a href="javascript:window.history.go(-1)">Back</a>
-    <h1>Microsoft Identity Python Web App</h1>
-    <h2>Welcome {{ user.get("name") }}!</h2>
-
-    <div>
-        <h1>Email Folders</h1>
     <table>
-      <tr>
-        <th>Name</th>
-        <th>Quantidade E-mails</th>
-        <th>Quantidade Sub-Pastas</th>
-        <th>Enter subfolder</th>
-        <th>Download emails</th>
-      </tr>
-      {% for folder in listFolders %}
         <tr>
-          <td>{{ folder.displayName }}</td>
-          <td>{{ folder.totalItemCount }}</td>
-          <td>{{ folder.childFolderCount }}</td>
-          <td><a href="/folders/{{ folder.id }}">Entrar</a></td>
-          <td><a href="/extract_emails/{{ folder.id }}">Download</a></td>
+            <th>Name</th>
+            <th>Quantidade E-mails</th>
+            <th>Quantidade Sub-Pastas</th>
+            <th>Enter subfolder</th>
+            <th>Download emails</th>
         </tr>
-      {% endfor %}
+        {% for folder in listFolders %}
+        <tr>
+            <td>{{ folder.displayName }}</td>
+            <td>{{ folder.totalItemCount }}</td>
+            <td>{{ folder.childFolderCount }}</td>
+            {%if folder.childFolderCount > 0%}
+            <td><a href="/folders/{{ folder.id }}">Entrar</a></td>
+            {% else %}
+            <td></td>
+            {% endif %}
+            {%if folder.totalItemCount > 0%}
+            <td><a href="/extract_emails/{{ folder.id }}">Download</a></td>
+            {% else %}
+            <td></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
     </table>
-    </div>
-
-    <li><a href="/logout">Logout</a></li>
-    <hr>
-    <footer style="text-align: right">Powered by MSAL Python {{ version }}</footer>
-</body>
-</html>
+</div>
+<hr>
+{% endblock %}
 
