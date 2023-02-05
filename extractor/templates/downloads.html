@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Downloads</title>
+    <style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #0077be;
+    color: white;
+    font-family: "Open Sans", sans-serif;
+  }
+  th, td {
+    border: 1px solid white;
+    padding: 10px 20px;
+    text-align: left;
+  }
+  th {
+    background-color: #0077be;
+  }
+  tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  .header-cell {
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+  .row-link {
+    color: white;
+    text-decoration: underline;
+  }
+</style>
+  </head>
+  <body>
+    <h1>Downloads</h1>
+    <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Nome do arquivo</th>
+        <th>Tamanho</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for download in downloads %}
+      <tr>
+        <td>{{ download.file_modiefied_time }}</td>
+        <td>{{ download.file_name }}</td>
+        <td>{{ download.file_size }} bytes</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  </body>
+</html>
