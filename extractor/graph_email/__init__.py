@@ -30,9 +30,9 @@ class EmailFolders:
         if not folder_id:
             raise Exception("Folder id não informada!")
         emails = []
-        time.sleep(5)
-        next_link = f"{self.base_url}/{folder_id}/messages"
+        next_link = f"{self.base_url}/{folder_id}/messages?top=100&skip=0"
         while next_link:
+            time.sleep(0.05)
             print("Carregando e-mails ->", next_link)
             response = requests.get(next_link, headers=self.headers)
             if response.status_code != 200:
@@ -46,3 +46,16 @@ class EmailFolders:
                 next_link = None
         print("Finalizado download dos e-mails")
         return emails
+
+    def get_message_by_id(self, folder_id, message_id):
+        if not folder_id:
+            raise Exception("Folder id não informada!")
+        if not message_id:
+            raise Exception("Message id não informada!")
+
+        url = f"{self.base_url}/{folder_id}/messages/{message_id}"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code != 200:
+            print("Falha ao obter e-mails. Código de status: ", response.status_code)
+            return None
+        return response.json()

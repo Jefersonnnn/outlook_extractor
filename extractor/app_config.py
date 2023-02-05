@@ -21,3 +21,5 @@ REDIRECT_PATH = "/getAToken"  # Used for forming an absolute URL to your redirec
 SCOPE = ["https://graph.microsoft.com/.default"]
 
 SESSION_TYPE = "filesystem"  # Specifies the token cache should be stored in server-side session
+
+SQLALCHEMY_DATABASE_URI = 'mysql://root:root@localhost/emails'

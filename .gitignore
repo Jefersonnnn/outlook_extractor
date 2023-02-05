@@ -108,3 +108,5 @@ ms-identity-python-webapp-master/flask_session/
 flask_session/
 download_emails/
 config.ini
+.idea/
+.idea/*

@@ -11,6 +11,9 @@ msal = "^1.21.0"
 Flask = "^2.2.2"
 Flask-Session = "^0.4.0"
 bs4 = "^0.0.1"
+Flask-SQLAlchemy = "^3.0.3"
+mysql-connector-python = "^8.0.32"
+mysqlclient = "^2.1.1"
 
 [tool.poetry.dev-dependencies]
 

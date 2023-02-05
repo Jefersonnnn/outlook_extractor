@@ -36,17 +36,19 @@
     <table>
     <thead>
       <tr>
+        <th>Id</th>
         <th>Data</th>
-        <th>Nome do arquivo</th>
-        <th>Tamanho</th>
+        <th>Emails Carregados</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody>
       {% for download in downloads %}
       <tr>
-        <td>{{ download.file_modiefied_time }}</td>
-        <td>{{ download.file_name }}</td>
-        <td>{{ download.file_size }} bytes</td>
+        <td>{{ download.id }}</td>
+        <td>{{ download.data }}</td>
+        <td>{{ download.qtd_emails }}</td>
+        <td>{{ download.status }}</td>
       </tr>
       {% endfor %}
     </tbody>
