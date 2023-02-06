@@ -16,11 +16,11 @@
     {% endif %}
     <nav>
         <ul>
-            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('routes.index') }}">Home</a></li>
             {% if user %}
-            <li><a href="{{ url_for('get_folders') }}">Listar Pastas do E-mail</a></li>
-            <li><a href="{{ url_for('downloads') }}">Listar Downloads</a></li>
-            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            <li><a href="{{ url_for('routes.get_folders') }}">Listar Pastas do E-mail</a></li>
+            <li><a href="{{ url_for('routes.downloads') }}">Listar Downloads</a></li>
+            <li><a href="{{ url_for('routes.logout') }}">Logout</a></li>
             {% endif %}
         </ul>
     </nav>
